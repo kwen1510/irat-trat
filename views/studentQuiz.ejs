@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IF-AT Quiz</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" />
+  <style>
+    body {
+      background: #f8f9fa;
+    }
+    table {
+      border-collapse: collapse;
+      margin: 20px 0;
+      width: 100%;
+      max-width: 800px;
+      background: #fff;
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      text-align: center;
+      position: relative;
+      padding: 16px;
+    }
+    th {
+      background: #f2f2f2;
+      font-weight: 600;
+    }
+    th.question-num {
+      width: 70px; 
+    }
+    td.answer {
+      cursor: pointer;
+      width: 60px;
+      height: 60px;
+      transition: background-color 0.2s ease;
+    }
+    td.answer:not(.revealed):hover {
+      background-color: #f9f9f9;
+    }
+    td.revealed {
+      background-color: #e0e0e0;
+      cursor: default;
+    }
+    td.revealed.correct::after {
+      content: '★';
+      color: gold;
+      font-size: 28px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    td.points {
+      background: #fafafa;
+      cursor: default;
+      width: 80px;
+      font-weight: bold;
+    }
+    .total-row {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-5">
+    <h1><%= quizTitle ? quizTitle : 'IF-AT Quiz' %></h1>
+    <p><strong>Class Code:</strong> <%= code %></p>
+    
+    <table class="table">
+      <thead>
+        <tr>
+          <th class="question-num"></th>
+          <% let letters = ['A','B','C','D','E']; %>
+          <% for(let i=0; i<optionCount; i++){ %>
+            <th><%= letters[i] %></th>
+          <% } %>
+          <th>Points</th>
+        </tr>
+      </thead>
+      <tbody id="quiz-body"></tbody>
+      <tfoot>
+        <tr class="total-row">
+          <th colspan="<%= optionCount + 1 %>">Total</th>
+          <td id="totalPoints">0</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <script>
+    const totalQuestions = <%= questionCount %>;
+    const optionCount = <%= optionCount %>;
+    const correctAnswers = <%- JSON.stringify(correctAnswers) %>;
+
+    const attempts = Array(totalQuestions).fill(0);
+    const answered = Array(totalQuestions).fill(false);
+    const scoring = [5,3,2,1,0];
+
+    const quizBody = document.getElementById('quiz-body');
+
+    function updateTotal() {
+      let total = 0;
+      const pointsCells = document.querySelectorAll('.points');
+      pointsCells.forEach(cell => {
+        const val = parseInt(cell.textContent, 10);
+        if (!isNaN(val)) total += val;
+      });
+      document.getElementById('totalPoints').textContent = total;
+    }
+
+    function buildQuiz() {
+      const letters = ['A','B','C','D','E'];
+
+      for (let i = 0; i < totalQuestions; i++) {
+        const row = document.createElement('tr');
+
+        // Question number cell
+        const th = document.createElement('th');
+        th.textContent = i + 1;
+        th.classList.add('question-num');
+        row.appendChild(th);
+
+        // Answer cells
+        for (let j = 0; j < optionCount; j++) {
+          const cell = document.createElement('td');
+          cell.classList.add('answer');
+          cell.dataset.correct = (correctAnswers[i] === letters[j]) ? 'true' : 'false';
+
+          cell.addEventListener('click', function() {
+            if (answered[i]) return;
+            attempts[i]++;
+            this.classList.add('revealed');
+
+            if (this.dataset.correct === 'true') {
+              this.classList.add('correct');
+              answered[i] = true;
+              const attemptNum = attempts[i];
+              const points = scoring[attemptNum - 1] || 0;
+
+              let pointsCell = row.querySelector('.points');
+              if (!pointsCell) {
+                pointsCell = document.createElement('td');
+                pointsCell.classList.add('points');
+                row.appendChild(pointsCell);
+              }
+              pointsCell.textContent = points;
+              updateTotal();
+            }
+          });
+
+          row.appendChild(cell);
+        }
+
+        // Points cell
+        const pointsCell = document.createElement('td');
+        pointsCell.classList.add('points');
+        row.appendChild(pointsCell);
+
+        quizBody.appendChild(row);
+      }
+    }
+
+    buildQuiz();
+  </script>
+</body>
+</html>
